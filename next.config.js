@@ -7,15 +7,9 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
 
-  // Uncoment to add domain whitelist
-  // images: {
-  //   remotePatterns: [
-  //     {
-  //       protocol: 'https',
-  //       hostname: 'res.cloudinary.com',
-  //     },
-  //   ]
-  // },
+  output: 'export',
+  basePath: '/react-minesweeper',
+  assetPrefix: '/react-minesweeper',
 
   webpack(config) {
     // Grab the existing rule that handles SVG imports
