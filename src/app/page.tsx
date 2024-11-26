@@ -16,7 +16,7 @@ type CellProps = TCell & {
   col: number;
 };
 
-export const Cell = ({
+const Cell = ({
   isFlagged,
   isMine,
   isRevealed,
