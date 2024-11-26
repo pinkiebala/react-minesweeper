@@ -16,3 +16,11 @@ export const MAP_SETTINGS = {
     mineCount: 10,
   },
 };
+
+export const BASIC_GAME_SETTING = {
+  revealedCount: 0,
+  flaggedCount: 0,
+  isGameOver: false,
+  isMineSet: false,
+  isWin: false,
+};

@@ -3,7 +3,7 @@ import { useImmerReducer } from 'use-immer';
 import { Action, GameState } from '@/lib/game/type';
 import logger from '@/lib/logger';
 
-import { DIRECTIONS, MAP_SETTINGS } from './constants';
+import { BASIC_GAME_SETTING, DIRECTIONS, MAP_SETTINGS } from './constants';
 import { getRandomInt } from './utils';
 
 const gameReducer = (draft: GameState, action: Action): GameState => {
@@ -71,22 +71,20 @@ const gameReducer = (draft: GameState, action: Action): GameState => {
   }
   switch (action.type) {
     case 'INITIALIZE': {
-      const { rowCount, colCount, mineCount } = action;
-      draft.rowCount = rowCount;
-      draft.colCount = colCount;
-      draft.mineCount = mineCount;
-      draft.revealedCount = 0;
-      draft.isMineSet = false;
-      draft.isGameOver = false;
-      draft.isWin = false;
-      draft.board = Array.from({ length: rowCount }, () =>
-        Array.from({ length: colCount }, () => ({
-          isMine: false,
-          isRevealed: false,
-          isFlagged: false,
-          adjacentMines: 0,
-        }))
-      );
+      const { rowCount, colCount } = action;
+      draft = {
+        ...draft,
+        ...action,
+        ...BASIC_GAME_SETTING,
+        board: Array.from({ length: rowCount }, () =>
+          Array.from({ length: colCount }, () => ({
+            isMine: false,
+            isRevealed: false,
+            isFlagged: false,
+            adjacentMines: 0,
+          }))
+        ),
+      };
       return draft;
     }
     case 'CLICK': {
@@ -138,8 +136,7 @@ const gameReducer = (draft: GameState, action: Action): GameState => {
 
 const initialState = {
   ...MAP_SETTINGS.BEGINNER,
-  revealedCount: 0,
-  flaggedCount: 0,
+  ...BASIC_GAME_SETTING,
   board: Array.from({ length: MAP_SETTINGS.BEGINNER.rowCount }, () =>
     Array.from({ length: MAP_SETTINGS.BEGINNER.colCount }, () => ({
       isMine: false,
@@ -148,9 +145,6 @@ const initialState = {
       adjacentMines: 0,
     }))
   ),
-  isGameOver: false,
-  isMineSet: false,
-  isWin: false,
 };
 
 export const useGameReducer = () => {
