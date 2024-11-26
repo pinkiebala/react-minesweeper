@@ -1,39 +1,10 @@
 import { useImmerReducer } from 'use-immer';
 
+import { Action, GameState } from '@/lib/game/type';
 import logger from '@/lib/logger';
 
 import { DIRECTIONS, MAP_SETTINGS } from './constants';
 import { getRandomInt } from './utils';
-
-export type TCell = {
-  isMine: boolean;
-  isRevealed: boolean;
-  isFlagged: boolean;
-  adjacentMines: number;
-};
-
-type GameState = {
-  rowCount: number;
-  colCount: number;
-  mineCount: number;
-  revealedCount: number;
-  flaggedCount: number;
-  board: TCell[][];
-  isMineSet: boolean;
-  isGameOver: boolean;
-  isWin: boolean;
-};
-
-type Action =
-  | {
-      type: 'INITIALIZE';
-      rowCount: number;
-      colCount: number;
-      mineCount: number;
-    }
-  | { type: 'CLICK'; row: number; col: number }
-  | { type: 'TOGGLE_FLAG'; row: number; col: number }
-  | { type: 'REVEAL_REMAINS'; row: number; col: number };
 
 const gameReducer = (draft: GameState, action: Action): GameState => {
   function inRange(row: number, col: number) {
