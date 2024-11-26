@@ -10,7 +10,7 @@ type GameContextType = {
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-export const GameProvider = ({ children }: { children: ReactNode }) => {
+export const GameContextProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useGameReducer();
 
   return (

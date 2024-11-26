@@ -1,50 +1,16 @@
 'use client';
 
-import clsx from 'clsx';
 import type { MouseEvent } from 'react';
 import { useCallback } from 'react';
 import '@/lib/env';
 
-import { TCell, useGameReducer } from '@/lib/game';
-import { MAP_SETTINGS } from '@/lib/game/constants';
+import { GameContextProvider, useGameContext } from '@/lib/game';
 import logger from '@/lib/logger';
 
+import { Cell } from '@/components/cell';
+import { ControlBar } from '@/components/control-bar';
+
 const CELL_WIDTH = '40px';
-
-type CellProps = TCell & {
-  row: number;
-  col: number;
-};
-
-const Cell = ({
-  isFlagged,
-  isMine,
-  isRevealed,
-  adjacentMines,
-  row,
-  col,
-}: CellProps) => {
-  return (
-    <div
-      className={clsx(
-        'cursor-pointer flex items-center justify-center text-lg font-bold',
-        [isRevealed ? 'bg-gray-300' : 'bg-gray-400 pointer']
-      )}
-      data-row={row}
-      data-col={col}
-      data-isrevealed={isRevealed}
-    >
-      {}
-      {isRevealed
-        ? isMine
-          ? '💣'
-          : adjacentMines > 0
-          ? adjacentMines
-          : ''
-        : isFlagged && '🚩'}
-    </div>
-  );
-};
 
 function getDataAttr(dataset: DOMStringMap) {
   const { row: rowStr, col: colStr, isrevealed } = dataset;
@@ -57,21 +23,8 @@ function getDataAttr(dataset: DOMStringMap) {
   };
 }
 
-export default function HomePage() {
-  const [state, dispatch] = useGameReducer();
-
-  const handleInitialize = useCallback(
-    (event: MouseEvent) => {
-      event.preventDefault();
-
-      logger({ action: 'INITIALIZE' });
-      dispatch({
-        type: 'INITIALIZE',
-        ...MAP_SETTINGS.BEGINNER,
-      });
-    },
-    [dispatch]
-  );
+function HomePage() {
+  const { state, dispatch } = useGameContext();
 
   const handleClick = useCallback(
     (event: MouseEvent) => {
@@ -120,14 +73,7 @@ export default function HomePage() {
 
   return (
     <div className='mx-auto w-min'>
-      <div className='flex text-2xl justify-center py-4 relative'>
-        <span className='text-red-600 font-2xl absolute left-0'>
-          {state.mineCount - state.flaggedCount}
-        </span>
-        <button type='button' onClick={handleInitialize}>
-          {state.isGameOver ? '😵' : state.isWin ? '😎' : '🙂'}
-        </button>
-      </div>
+      <ControlBar />
       <div
         className='border-solid mx-auto grid gap-[1px] select-none'
         style={{
@@ -138,21 +84,27 @@ export default function HomePage() {
         onContextMenu={handleClick}
         onDoubleClick={handleDoubleClick}
       >
-        {state.board.map((row, rowIndex) => (
-          <>
-            {row.map((cell, colIndex) => {
-              return (
-                <Cell
-                  key={[rowIndex, colIndex].join('_')}
-                  {...cell}
-                  row={rowIndex}
-                  col={colIndex}
-                />
-              );
-            })}
-          </>
-        ))}
+        {state.board.map((row, rowIndex) =>
+          row.map((cell, colIndex) => {
+            return (
+              <Cell
+                key={[rowIndex, colIndex].join('_')}
+                {...cell}
+                row={rowIndex}
+                col={colIndex}
+              />
+            );
+          })
+        )}
       </div>
     </div>
+  );
+}
+
+export default function HomePageWithGameContextProvider() {
+  return (
+    <GameContextProvider>
+      <HomePage />
+    </GameContextProvider>
   );
 }
