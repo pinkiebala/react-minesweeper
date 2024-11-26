@@ -1,68 +1,158 @@
 'use client';
 
-import Head from 'next/head';
-import * as React from 'react';
+import clsx from 'clsx';
+import type { MouseEvent } from 'react';
+import { useCallback } from 'react';
 import '@/lib/env';
 
-import ArrowLink from '@/components/links/ArrowLink';
-import ButtonLink from '@/components/links/ButtonLink';
-import UnderlineLink from '@/components/links/UnderlineLink';
-import UnstyledLink from '@/components/links/UnstyledLink';
+import { TCell, useGameReducer } from '@/lib/game';
+import { MAP_SETTINGS } from '@/lib/game/constants';
+import logger from '@/lib/logger';
 
-/**
- * SVGR Support
- * Caveat: No React Props Type.
- *
- * You can override the next-env if the type is important to you
- * @see https://stackoverflow.com/questions/68103844/how-to-override-next-js-svg-module-declaration
- */
-import Logo from '~/svg/Logo.svg';
+const CELL_WIDTH = '40px';
+
+type CellProps = TCell & {
+  row: number;
+  col: number;
+};
+
+export const Cell = ({
+  isFlagged,
+  isMine,
+  isRevealed,
+  adjacentMines,
+  row,
+  col,
+}: CellProps) => {
+  return (
+    <div
+      className={clsx(
+        'cursor-pointer flex items-center justify-center text-lg font-bold',
+        [isRevealed ? 'bg-gray-300' : 'bg-gray-400 pointer']
+      )}
+      data-row={row}
+      data-col={col}
+      data-isrevealed={isRevealed}
+    >
+      {}
+      {isRevealed
+        ? isMine
+          ? '💣'
+          : adjacentMines > 0
+          ? adjacentMines
+          : ''
+        : isFlagged && '🚩'}
+    </div>
+  );
+};
+
+function getDataAttr(dataset: DOMStringMap) {
+  const { row: rowStr, col: colStr, isrevealed } = dataset;
+
+  if (!rowStr || !colStr || !isrevealed) return null;
+  return {
+    row: parseInt(rowStr, 10),
+    col: parseInt(colStr, 10),
+    isRevealed: isrevealed === 'true',
+  };
+}
 
 export default function HomePage() {
+  const [state, dispatch] = useGameReducer();
+
+  const handleInitialize = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+
+      logger({ action: 'INITIALIZE' });
+      dispatch({
+        type: 'INITIALIZE',
+        ...MAP_SETTINGS.BEGINNER,
+      });
+    },
+    [dispatch]
+  );
+
+  const handleClick = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+      if (state.isWin || state.isGameOver) return;
+      if (!(event.target instanceof HTMLDivElement)) {
+        return;
+      }
+      const parsedDataSet = getDataAttr(event.target.dataset);
+      if (!parsedDataSet) return;
+      const { row, col, isRevealed } = parsedDataSet;
+      if (isRevealed) return;
+
+      if (event.type === 'click') {
+        dispatch({ type: 'CLICK', row, col });
+        logger({ action: 'CLICK', row, col, isRevealed });
+      } else if (event.type === 'contextmenu') {
+        dispatch({ type: 'TOGGLE_FLAG', row, col });
+        logger({ action: 'TOGGLE_FLAG', row, col, isRevealed });
+      }
+    },
+    [state.isWin, state.isGameOver, dispatch]
+  );
+
+  const handleDoubleClick = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+      if (state.isWin || state.isGameOver) return;
+      if (!(event.target instanceof HTMLDivElement)) {
+        return;
+      }
+      const parsedDataSet = getDataAttr(event.target.dataset);
+      if (!parsedDataSet) return;
+      const { row, col, isRevealed } = parsedDataSet;
+      logger({ action: 'REVEAL_REMAINS', row, col, isRevealed });
+      if (!isRevealed) return;
+
+      dispatch({
+        type: 'REVEAL_REMAINS',
+        row,
+        col,
+      });
+    },
+    [state.isWin, state.isGameOver, dispatch]
+  );
+
   return (
-    <main>
-      <Head>
-        <title>Hi</title>
-      </Head>
-      <section className='bg-white'>
-        <div className='layout relative flex min-h-screen flex-col items-center justify-center py-12 text-center'>
-          <Logo className='w-16' />
-          <h1 className='mt-4'>Next.js + Tailwind CSS + TypeScript Starter</h1>
-          <p className='mt-2 text-sm text-gray-800'>
-            A starter for Next.js, Tailwind CSS, and TypeScript with Absolute
-            Import, Seo, Link component, pre-configured with Husky{' '}
-          </p>
-          <p className='mt-2 text-sm text-gray-700'>
-            <ArrowLink href='https://github.com/theodorusclarence/ts-nextjs-tailwind-starter'>
-              See the repository
-            </ArrowLink>
-          </p>
-
-          <ButtonLink className='mt-6' href='/components' variant='light'>
-            See all components
-          </ButtonLink>
-
-          <UnstyledLink
-            href='https://vercel.com/new/git/external?repository-url=https%3A%2F%2Fgithub.com%2Ftheodorusclarence%2Fts-nextjs-tailwind-starter'
-            className='mt-4'
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              width='92'
-              height='32'
-              src='https://vercel.com/button'
-              alt='Deploy with Vercel'
-            />
-          </UnstyledLink>
-
-          <footer className='absolute bottom-2 text-gray-700'>
-            © {new Date().getFullYear()} By{' '}
-            <UnderlineLink href='https://theodorusclarence.com?ref=tsnextstarter'>
-              Theodorus Clarence
-            </UnderlineLink>
-          </footer>
-        </div>
-      </section>
-    </main>
+    <div className='mx-auto w-min'>
+      <div className='flex text-2xl justify-center py-4 relative'>
+        <span className='text-red-600 font-2xl absolute left-0'>
+          {state.mineCount - state.flaggedCount}
+        </span>
+        <button type='button' onClick={handleInitialize}>
+          {state.isGameOver ? '😵' : state.isWin ? '😎' : '🙂'}
+        </button>
+      </div>
+      <div
+        className='border-solid mx-auto grid gap-[1px] select-none'
+        style={{
+          gridTemplateColumns: `repeat(${state.colCount},${CELL_WIDTH})`,
+          gridTemplateRows: `repeat(${state.rowCount},${CELL_WIDTH})`,
+        }}
+        onClick={handleClick}
+        onContextMenu={handleClick}
+        onDoubleClick={handleDoubleClick}
+      >
+        {state.board.map((row, rowIndex) => (
+          <>
+            {row.map((cell, colIndex) => {
+              return (
+                <Cell
+                  key={[rowIndex, colIndex].join('_')}
+                  {...cell}
+                  row={rowIndex}
+                  col={colIndex}
+                />
+              );
+            })}
+          </>
+        ))}
+      </div>
+    </div>
   );
 }
