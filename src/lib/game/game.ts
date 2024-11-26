@@ -154,6 +154,8 @@ const gameReducer = (draft: GameState, action: Action): GameState => {
         const newCol = col + dy;
         if (inRange(newRow, newCol) && !draft.board[newRow][newCol].isFlagged) {
           reveal(newRow, newCol);
+          if (!draft.board[newRow][newCol].isMine)
+            revealNoAdjacentMinesCell(newRow, newCol);
         }
       }
       return draft;
